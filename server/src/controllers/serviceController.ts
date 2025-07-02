@@ -108,7 +108,7 @@ export const forceDeploy = async (c: Context) => {
     const cwd = process.cwd();
     console.log("[forceDeploy] Running script:", scriptPath, "cwd:", cwd);
 
-    const child = spawn("sh", [scriptPath], { cwd });
+    const child = spawn("bash", [scriptPath], { cwd });
 
     let stdout = "";
     let stderr = "";
