@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import Sidebar from "../../components/Sidebar";
 import { useAuth } from "../../hooks/useAuth";
-import { Toaster, toast } from "sonner";
+import {  toast } from "sonner";
 import { FiLoader, FiX } from "react-icons/fi";
 
 type User = {
@@ -293,7 +293,6 @@ const AdminUsersPage: React.FC = () => {
 
   return (
     <div className="flex h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950">
-      <Toaster richColors position="top-right" closeButton />
       <Sidebar />
       <UserFormModal
         isOpen={showModal}

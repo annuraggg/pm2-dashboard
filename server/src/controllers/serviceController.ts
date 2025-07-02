@@ -9,6 +9,7 @@ export const listServices = async (c: Context) => {
     const user = c.get("user");
     if (!user) return c.json({ error: "Unauthorized" }, 401);
     const services = await getServicesForUser(user);
+    console.log("User services:", services);
     return c.json({ services }, 200);
   } catch (error) {
     console.error("Error listing user services:", error);

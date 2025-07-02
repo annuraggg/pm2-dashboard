@@ -1,4 +1,5 @@
 import mongoose, { Schema, Document, Types } from "mongoose";
+import { UserModel } from "./user.js";
 
 export interface IService extends Document {
   name: string;
@@ -37,9 +38,16 @@ export const deleteServiceFromDb = (id: string) =>
   ServiceModel.findByIdAndDelete(id).exec();
 
 // For teams: get only assigned services, for admin: get all
-export const getServicesForUser = (user: { id: string; role: string }) =>
-  user.role === "admin"
+export const getServicesForUser = async (user: {
+  id: string;
+  role: string;
+}) => {
+  const u = await UserModel.findById(user.id);
+  return user.role === "admin"
     ? getAllServices()
-    : ServiceModel.find({ assignedUsers: user.id }).exec();
+    : ServiceModel.find({
+        _id: { $in: u?.assignedServices || [] },
+      }).exec();
+};
 
 export const ServiceModel = mongoose.model<IService>("Service", ServiceSchema);
