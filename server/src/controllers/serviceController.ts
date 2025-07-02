@@ -67,51 +67,79 @@ export const getLogs = async (c: Context) => {
 // POST /api/services/:id/deploy
 export const forceDeploy = async (c: Context) => {
   try {
+    console.log("[forceDeploy] Called forceDeploy controller");
     const user = c.get("user");
-    if (!user) return c.json({ error: "Unauthorized" }, 401);
+    console.log("[forceDeploy] User from context:", user);
+    if (!user) {
+      console.log("[forceDeploy] No user, unauthorized");
+      return c.json({ error: "Unauthorized" }, 401);
+    }
 
     const serviceId = c.req.param("id");
-    if (!serviceId) return c.json({ error: "Service ID missing" }, 400);
+    console.log("[forceDeploy] Service ID param:", serviceId);
+    if (!serviceId) {
+      console.log("[forceDeploy] No service ID provided");
+      return c.json({ error: "Service ID missing" }, 400);
+    }
 
     const service = await getServiceById(serviceId);
-    if (!service) return c.json({ error: "Not found" }, 404);
+    console.log("[forceDeploy] Service fetched from DB:", service);
+    if (!service) {
+      console.log("[forceDeploy] Service not found in DB");
+      return c.json({ error: "Not found" }, 404);
+    }
 
-    if (
-      user.role !== "admin" &&
-      !service.assignedUsers.some((u: any) => u._id?.toString() === user.id)
-    ) {
+    const assignedUserIds = service.assignedUsers.map((u: any) =>
+      typeof u === "object" && u._id ? u._id.toString() : u.toString()
+    );
+    console.log("[forceDeploy] Assigned user IDs:", assignedUserIds);
+
+    if (user.role !== "admin" && !assignedUserIds.includes(user.id)) {
+      console.log("[forceDeploy] User forbidden to deploy this service");
       return c.json({ error: "Forbidden" }, 403);
     }
 
     if (!service.deploy_script_path) {
+      console.log("[forceDeploy] No deploy_script_path found on service");
       return c.json({ error: "No deploy script path specified." }, 400);
     }
 
-    // Spawn the deploy script
     const scriptPath = service.deploy_script_path;
-    const child = spawn("sh", [scriptPath], {
-      cwd: process.cwd(), // or set to your project dir if needed
-    });
+    const cwd = process.cwd();
+    console.log("[forceDeploy] Running script:", scriptPath, "cwd:", cwd);
+
+    const child = spawn("sh", [scriptPath], { cwd });
 
     let stdout = "";
     let stderr = "";
 
     child.stdout.on("data", (data) => {
+      console.log("[forceDeploy] Script stdout chunk:", data.toString());
       stdout += data.toString();
     });
 
     child.stderr.on("data", (data) => {
+      console.error("[forceDeploy] Script stderr chunk:", data.toString());
       stderr += data.toString();
     });
 
     child.on("close", (code) => {
+      console.log("[forceDeploy] Script closed with code:", code);
       if (code === 0) {
+        console.log(
+          "[forceDeploy] Deploy script succeeded, output:",
+          stdout.trim()
+        );
         c.json({
           success: true,
           msg: "Deploy script executed successfully",
           output: stdout.trim(),
         });
       } else {
+        console.error(
+          "[forceDeploy] Deploy script failed, stderr:",
+          stderr.trim()
+        );
         c.json({
           success: false,
           msg: `Deploy script failed with exit code ${code}`,
@@ -120,10 +148,18 @@ export const forceDeploy = async (c: Context) => {
       }
     });
 
-    // Keep the function "alive" until the script exits
+    child.on("error", (err) => {
+      console.error("[forceDeploy] Failed to start deploy script:", err);
+      c.json(
+        { error: "Failed to start deploy script", details: err.toString() },
+        500
+      );
+    });
+
+    // Keep the function alive until the script finishes
     return new Promise(() => {});
   } catch (error) {
-    console.error("Error executing deploy script:", error);
+    console.error("[forceDeploy] Error executing deploy script:", error);
     return c.json({ error: "Failed to trigger deploy" }, 500);
   }
 };
