@@ -67,46 +67,35 @@ export const getLogs = async (c: Context) => {
 // POST /api/services/:id/deploy
 export const forceDeploy = async (c: Context) => {
   try {
-    console.log("[forceDeploy] Called forceDeploy controller");
     const user = c.get("user");
-    console.log("[forceDeploy] User from context:", user);
     if (!user) {
-      console.log("[forceDeploy] No user, unauthorized");
       return c.json({ error: "Unauthorized" }, 401);
     }
 
     const serviceId = c.req.param("id");
-    console.log("[forceDeploy] Service ID param:", serviceId);
     if (!serviceId) {
-      console.log("[forceDeploy] No service ID provided");
       return c.json({ error: "Service ID missing" }, 400);
     }
 
     const service = await getServiceById(serviceId);
-    console.log("[forceDeploy] Service fetched from DB:", service);
     if (!service) {
-      console.log("[forceDeploy] Service not found in DB");
       return c.json({ error: "Not found" }, 404);
     }
 
     const assignedUserIds = service.assignedUsers.map((u: any) =>
       typeof u === "object" && u._id ? u._id.toString() : u.toString()
     );
-    console.log("[forceDeploy] Assigned user IDs:", assignedUserIds);
 
     if (user.role !== "admin" && !assignedUserIds.includes(user.id)) {
-      console.log("[forceDeploy] User forbidden to deploy this service");
       return c.json({ error: "Forbidden" }, 403);
     }
 
     if (!service.deploy_script_path) {
-      console.log("[forceDeploy] No deploy_script_path found on service");
       return c.json({ error: "No deploy script path specified." }, 400);
     }
 
     const scriptPath = service.deploy_script_path;
     const cwd = process.cwd();
-    console.log("[forceDeploy] Running script:", scriptPath, "cwd:", cwd);
 
     const child = spawn("bash", [scriptPath], { cwd });
 
@@ -114,32 +103,21 @@ export const forceDeploy = async (c: Context) => {
     let stderr = "";
 
     child.stdout.on("data", (data) => {
-      console.log("[forceDeploy] Script stdout chunk:", data.toString());
       stdout += data.toString();
     });
 
     child.stderr.on("data", (data) => {
-      console.error("[forceDeploy] Script stderr chunk:", data.toString());
       stderr += data.toString();
     });
 
     child.on("close", (code) => {
-      console.log("[forceDeploy] Script closed with code:", code);
       if (code === 0) {
-        console.log(
-          "[forceDeploy] Deploy script succeeded, output:",
-          stdout.trim()
-        );
         c.json({
           success: true,
           msg: "Deploy script executed successfully",
           output: stdout.trim(),
         });
       } else {
-        console.error(
-          "[forceDeploy] Deploy script failed, stderr:",
-          stderr.trim()
-        );
         c.json({
           success: false,
           msg: `Deploy script failed with exit code ${code}`,
@@ -149,17 +127,18 @@ export const forceDeploy = async (c: Context) => {
     });
 
     child.on("error", (err) => {
-      console.error("[forceDeploy] Failed to start deploy script:", err);
       c.json(
         { error: "Failed to start deploy script", details: err.toString() },
         500
       );
     });
 
-    // Keep the function alive until the script finishes
-    return new Promise(() => {});
+    return c.json({
+      success: true,
+      msg: "Deploy script is running",
+      output: "The deploy script has been triggered.",
+    });
   } catch (error) {
-    console.error("[forceDeploy] Error executing deploy script:", error);
     return c.json({ error: "Failed to trigger deploy" }, 500);
   }
 };

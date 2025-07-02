@@ -172,7 +172,7 @@ const DashboardPage: React.FC = () => {
         toast.success(
           type === "restart"
             ? "Restarted successfully."
-            : "Deploy script executed"
+            : "Deploy script executed. Please allow a few minutes for changes to take effect."
         );
       } catch (e) {
         toast.error("Action failed.");
