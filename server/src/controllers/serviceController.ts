@@ -29,7 +29,12 @@ export const restartService = async (c: Context) => {
     const service = await getServiceById(serviceId);
     if (!service) return c.json({ error: "Not found" }, 404);
 
-    if (user.role !== "admin" && !service.assignedUsers.includes(user.id)) {
+    const s = await getServicesForUser(user);
+
+    if (
+      user.role !== "admin" &&
+      !s.some((s: any) => s._id.toString() === service._id?.toString())
+    ) {
       return c.json({ error: "Forbidden" }, 403);
     }
 
@@ -53,7 +58,12 @@ export const getLogs = async (c: Context) => {
     const service = await getServiceById(serviceId);
     if (!service) return c.json({ error: "Not found" }, 404);
 
-    if (user.role !== "admin" && !service.assignedUsers.includes(user.id)) {
+    const s = await getServicesForUser(user);
+
+    if (
+      user.role !== "admin" &&
+      !s.some((s: any) => s._id.toString() === service._id?.toString())
+    ) {
       return c.json({ error: "Forbidden" }, 403);
     }
 
@@ -87,7 +97,12 @@ export const forceDeploy = async (c: Context) => {
       typeof u === "object" && u._id ? u._id.toString() : u.toString()
     );
 
-    if (user.role !== "admin" && !assignedUserIds.includes(user.id)) {
+    const s = await getServicesForUser(user);
+
+    if (
+      user.role !== "admin" &&
+      !s.some((s: any) => s._id.toString() === service._id?.toString())
+    ) {
       return c.json({ error: "Forbidden" }, 403);
     }
 
