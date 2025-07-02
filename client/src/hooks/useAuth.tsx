@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import axios, { type AxiosRequestConfig } from "axios";
 
-const API_BASE_URL = "http://localhost:4000";
+const API_BASE_URL = import.meta.env.VITE_API_URL 
 
 type User = { id: string; username: string; role: "admin" | "team" };
 
