@@ -13,7 +13,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
     <BrowserRouter basename={basename}>
       <AuthProvider>
         <App />
-        <Toaster richColors />
+        <Toaster richColors theme="dark" />
       </AuthProvider>
     </BrowserRouter>
   </React.StrictMode>
