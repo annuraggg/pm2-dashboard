@@ -1,6 +1,7 @@
 import { type Context } from "hono";
 import { getServicesForUser, getServiceById } from "../models/service.js";
 import { restartPM2Process, getPM2Logs } from "../services/pm2/pm2service.js";
+import { spawn } from "child_process";
 
 // GET /api/services/
 export const listServices = async (c: Context) => {
@@ -75,14 +76,52 @@ export const forceDeploy = async (c: Context) => {
     const service = await getServiceById(serviceId);
     if (!service) return c.json({ error: "Not found" }, 404);
 
-    if (user.role !== "admin" && !service.assignedUsers.includes(user.id)) {
+    if (
+      user.role !== "admin" &&
+      !service.assignedUsers.some((u: any) => u._id?.toString() === user.id)
+    ) {
       return c.json({ error: "Forbidden" }, 403);
     }
 
-    return c.json(
-      { success: true, msg: "Deploy script executed (placeholder)" },
-      200
-    );
+    if (!service.deploy_script_path) {
+      return c.json({ error: "No deploy script path specified." }, 400);
+    }
+
+    // Spawn the deploy script
+    const scriptPath = service.deploy_script_path;
+    const child = spawn("sh", [scriptPath], {
+      cwd: process.cwd(), // or set to your project dir if needed
+    });
+
+    let stdout = "";
+    let stderr = "";
+
+    child.stdout.on("data", (data) => {
+      stdout += data.toString();
+    });
+
+    child.stderr.on("data", (data) => {
+      stderr += data.toString();
+    });
+
+    child.on("close", (code) => {
+      if (code === 0) {
+        c.json({
+          success: true,
+          msg: "Deploy script executed successfully",
+          output: stdout.trim(),
+        });
+      } else {
+        c.json({
+          success: false,
+          msg: `Deploy script failed with exit code ${code}`,
+          error: stderr.trim(),
+        });
+      }
+    });
+
+    // Keep the function "alive" until the script exits
+    return new Promise(() => {});
   } catch (error) {
     console.error("Error executing deploy script:", error);
     return c.json({ error: "Failed to trigger deploy" }, 500);

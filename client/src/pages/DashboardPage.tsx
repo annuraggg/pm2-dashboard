@@ -58,15 +58,17 @@ const ServiceCard: React.FC<{
         <HiTerminal />
         Logs
       </button>
-      <button
-        className="flex-1 px-3 py-2 rounded-lg bg-green-600/10 border border-green-600 text-green-200 font-semibold flex items-center justify-center gap-2 transition hover:bg-green-600/20 hover:border-green-400 focus:ring-2 focus:ring-green-900 disabled:opacity-60 disabled:cursor-not-allowed"
-        onClick={() => onAction("deploy", svc._id)}
-        disabled={isPending}
-        aria-label="Deploy"
-      >
-        <HiCloudUpload />
-        Deploy
-      </button>
+      {svc.deploy_script_path && (
+        <button
+          className="flex-1 px-3 py-2 rounded-lg bg-green-600/10 border border-green-600 text-green-200 font-semibold flex items-center justify-center gap-2 transition hover:bg-green-600/20 hover:border-green-400 focus:ring-2 focus:ring-green-900 disabled:opacity-60 disabled:cursor-not-allowed"
+          onClick={() => onAction("deploy", svc._id)}
+          disabled={isPending}
+          aria-label="Deploy"
+        >
+          <HiCloudUpload />
+          Deploy
+        </button>
+      )}
     </div>
     {svc.assignedUsers && svc.assignedUsers.length > 0 && (
       <div className="flex flex-wrap gap-1 mt-1">
@@ -170,7 +172,7 @@ const DashboardPage: React.FC = () => {
         toast.success(
           type === "restart"
             ? "Restarted successfully."
-            : "Deploy script executed (if configured)."
+            : "Deploy script executed"
         );
       } catch (e) {
         toast.error("Action failed.");
