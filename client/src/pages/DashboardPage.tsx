@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Sidebar from "../components/Sidebar";
 import { useAuth } from "../hooks/useAuth";
 import { HiRefresh, HiTerminal, HiCloudUpload } from "react-icons/hi";
@@ -90,42 +90,54 @@ const LogPanel: React.FC<{
   logs: string;
   onClose: () => void;
   loading: boolean;
-}> = ({ logs, onClose, loading }) => (
-  <div className="fixed inset-0 z-50 flex">
-    <div className="fixed inset-0 bg-black/70" onClick={onClose} />
-    <div className="relative ml-auto w-full max-w-2xl h-full bg-gray-950 border-l border-gray-800 shadow-2xl flex flex-col animate-slide-left">
-      <div className="flex items-center justify-between border-b border-gray-800 px-6 py-4">
-        <div className="text-lg font-semibold text-gray-100">Service Logs</div>
-        <button
-          className="p-2 rounded-md hover:bg-gray-800 text-gray-400"
-          onClick={onClose}
-          title="Close"
-        >
-          <svg width={20} height={20} fill="none">
-            <path
-              d="M6 6l8 8M6 14L14 6"
-              stroke="currentColor"
-              strokeWidth={2}
-              strokeLinecap="round"
-            />
-          </svg>
-        </button>
-      </div>
-      <div className="flex-1 overflow-auto p-6 bg-gray-950">
-        {loading ? (
-          <div className="flex flex-col items-center mt-24 gap-2">
-            <FiLoader className="text-3xl text-gray-600 animate-spin" />
-            <span className="text-gray-400 text-sm">Loading logs…</span>
+}> = ({ logs, onClose, loading }) => {
+  const logEndRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!loading && logEndRef.current) {
+      logEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [logs, loading]);
+
+  return (
+    <div className="fixed inset-0 z-50 flex">
+      <div className="fixed inset-0 bg-black/70" onClick={onClose} />
+      <div className="relative ml-auto w-full max-w-2xl h-full bg-gray-950 border-l border-gray-800 shadow-2xl flex flex-col animate-slide-left">
+        <div className="flex items-center justify-between border-b border-gray-800 px-6 py-4">
+          <div className="text-lg font-semibold text-gray-100">
+            Service Logs
           </div>
-        ) : (
-          <pre className="text-xs font-mono text-green-300 bg-black rounded-lg p-3 max-h-[60vh] overflow-auto whitespace-pre leading-relaxed shadow-inner">
-            {logs}
-          </pre>
-        )}
+          <button
+            className="p-2 rounded-md hover:bg-gray-800 text-gray-400"
+            onClick={onClose}
+            title="Close"
+          >
+            <svg width={20} height={20} fill="none">
+              <path
+                d="M6 6l8 8M6 14L14 6"
+                stroke="currentColor"
+                strokeWidth={2}
+                strokeLinecap="round"
+              />
+            </svg>
+          </button>
+        </div>
+        <div className="flex-1 overflow-auto p-6 bg-gray-950">
+          {loading ? (
+            <div className="flex flex-col items-center mt-24 gap-2">
+              <FiLoader className="text-3xl text-gray-600 animate-spin" />
+              <span className="text-gray-400 text-sm">Loading logs…</span>
+            </div>
+          ) : (
+            <pre className="text-xs font-mono text-white bg-black rounded-lg p-3 max-h-[60vh] overflow-auto whitespace-pre leading-relaxed shadow-inner">
+              {logs}
+              <div ref={logEndRef} />
+            </pre>
+          )}
+        </div>
       </div>
-    </div>
-    <style>
-      {`
+      <style>
+        {`
         @keyframes slide-left {
           from { transform: translateX(100%);}
           to { transform: translateX(0);}
@@ -134,9 +146,10 @@ const LogPanel: React.FC<{
           animation: slide-left 0.28s cubic-bezier(.4,0,.2,1);
         }
       `}
-    </style>
-  </div>
-);
+      </style>
+    </div>
+  );
+};
 
 const DashboardPage: React.FC = () => {
   const { api, user } = useAuth();

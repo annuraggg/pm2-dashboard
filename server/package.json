@@ -15,7 +15,8 @@
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.16.1",
     "pm2": "^6.0.8",
-    "read-last-lines": "^1.8.0"
+    "read-last-lines": "^1.8.0",
+    "strip-ansi": "^7.1.0"
   },
   "devDependencies": {
     "@types/node": "^20.11.17",

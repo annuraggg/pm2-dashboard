@@ -1,6 +1,7 @@
 import pm2 from "pm2";
 import fs from "fs/promises";
 import { exec } from "child_process";
+import stripAnsi from "strip-ansi";
 
 // List all PM2 processes
 export async function listPM2Processes(): Promise<any[]> {
@@ -54,8 +55,8 @@ export async function getPM2Logs(
   console.log(
     `[PM2] Fetching logs using pm2 logs command for process: ${pm2Id}, lines: ${lines}`
   );
+
   return new Promise((resolve, reject) => {
-    // --nostream ensures it doesn't keep streaming, just gives the last N lines and exits
     exec(
       `pm2 logs ${pm2Id} --lines ${lines} --nostream`,
       { maxBuffer: 1024 * 1024 },
@@ -67,7 +68,18 @@ export async function getPM2Logs(
           );
           return reject(stderr || err);
         }
-        resolve(stdout);
+
+        const cleanLogs = stripAnsi(stdout);
+
+        const logsWithTimestamps = cleanLogs
+          .split("\n")
+          .map((line) => {
+            const ts = new Date().toISOString();
+            return `[${ts}] ${line}`;
+          })
+          .join("\n");
+
+        resolve(logsWithTimestamps);
       }
     );
   });
