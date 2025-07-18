@@ -4,6 +4,7 @@ import { useAuth } from "../hooks/useAuth";
 import { HiRefresh, HiTerminal, HiCloudUpload } from "react-icons/hi";
 import { FiLoader } from "react-icons/fi";
 import { toast } from "sonner";
+import Ansi from "ansi-to-react";
 
 type Service = {
   _id: string;
@@ -99,80 +100,6 @@ const LogPanel: React.FC<{
     }
   }, [logs, loading]);
 
-  const ANSI_COLORS: Record<string, string> = {
-    "30": "black",
-    "31": "red",
-    "32": "green",
-    "33": "yellow",
-    "34": "blue",
-    "35": "magenta",
-    "36": "cyan",
-    "37": "white",
-    "90": "grey",
-    "91": "lightcoral",
-    "92": "lightgreen",
-    "93": "lightyellow",
-    "94": "lightblue",
-    "95": "violet",
-    "96": "lightcyan",
-    "97": "white",
-  };
-
-  function parseAnsiToReact(text: string): React.ReactNode[] {
-    const ESC = "\x1b"; // or "\u001b"
-    const regex = new RegExp(`${ESC}\\[(\\d+)m`, "g");
-
-    const elements: React.ReactNode[] = [];
-    let lastIndex = 0;
-    let match;
-    let currentColor = undefined;
-
-    while ((match = regex.exec(text)) !== null) {
-      const index = match.index;
-      const code = match[1];
-
-      // Text before this code
-      if (index > lastIndex) {
-        const chunk = text.substring(lastIndex, index);
-        if (currentColor) {
-          elements.push(
-            <span style={{ color: currentColor }} key={lastIndex}>
-              {chunk}
-            </span>
-          );
-        } else {
-          elements.push(chunk);
-        }
-      }
-
-      // Update current color
-      if (code === "0") {
-        // Reset
-        currentColor = undefined;
-      } else {
-        currentColor = ANSI_COLORS[code] || currentColor;
-      }
-
-      lastIndex = regex.lastIndex;
-    }
-
-    // Remaining text after last ANSI code
-    if (lastIndex < text.length) {
-      const chunk = text.substring(lastIndex);
-      if (currentColor) {
-        elements.push(
-          <span style={{ color: currentColor }} key={lastIndex}>
-            {chunk}
-          </span>
-        );
-      } else {
-        elements.push(chunk);
-      }
-    }
-
-    return elements;
-  }
-
   return (
     <div className="fixed inset-0 z-50 flex">
       <div className="fixed inset-0 bg-black/70" onClick={onClose} />
@@ -203,11 +130,8 @@ const LogPanel: React.FC<{
               <span className="text-gray-400 text-sm">Loading logs…</span>
             </div>
           ) : (
-            <pre
-              className="text-xs font-mono bg-black rounded-lg p-3 max-h-[60vh] overflow-auto leading-relaxed shadow-inner"
-              style={{ color: "white", whiteSpace: "pre-wrap" }}
-            >
-              {parseAnsiToReact(logs)}
+            <pre className="text-xs font-mono text-white bg-black rounded-lg p-3 max-h-[60vh] overflow-auto leading-relaxed shadow-inner">
+              <Ansi>{logs}</Ansi>
               <div ref={logEndRef} />
             </pre>
           )}
