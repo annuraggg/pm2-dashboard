@@ -4,6 +4,7 @@ import { useAuth } from "../hooks/useAuth";
 import { HiRefresh, HiTerminal, HiCloudUpload } from "react-icons/hi";
 import { FiLoader } from "react-icons/fi";
 import { toast } from "sonner";
+import Ansi from "ansi-to-react";
 
 type Service = {
   _id: string;
@@ -129,8 +130,8 @@ const LogPanel: React.FC<{
               <span className="text-gray-400 text-sm">Loading logs…</span>
             </div>
           ) : (
-            <pre className="text-xs font-mono text-white bg-black rounded-lg p-3 max-h-[60vh] overflow-auto whitespace-pre leading-relaxed shadow-inner">
-              {logs}
+            <pre className="text-xs font-mono text-white bg-black rounded-lg p-3 max-h-[60vh] overflow-auto leading-relaxed shadow-inner">
+              <Ansi>{logs}</Ansi>
               <div ref={logEndRef} />
             </pre>
           )}

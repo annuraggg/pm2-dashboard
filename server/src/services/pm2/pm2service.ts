@@ -1,7 +1,6 @@
 import pm2 from "pm2";
 import fs from "fs/promises";
-import { exec, spawn } from "child_process";
-import stripAnsi from "strip-ansi";
+import { exec } from "child_process";
 
 // List all PM2 processes
 export async function listPM2Processes(): Promise<any[]> {
@@ -53,38 +52,23 @@ export async function getPM2Logs(
   lines = 100
 ): Promise<string> {
   console.log(
-    `[PM2] Fetching logs for process: ${pm2Id}, lines: ${lines}`
+    `[PM2] Fetching logs using pm2 logs command for process: ${pm2Id}, lines: ${lines}`
   );
-
   return new Promise((resolve, reject) => {
-    const chunks: string[] = [];
-
-    const child = spawn(
-      "pm2",
-      ["logs", String(pm2Id), "--lines", String(lines), "--nostream", "--raw"],
-      {
-        env: {
-          ...process.env,
-          FORCE_COLOR: "1", // tell pm2 and chalk to output colors
-          TERM: "xterm-256color", // emulate terminal
-        },
+    // --nostream ensures it doesn't keep streaming, just gives the last N lines and exits
+    exec(
+      `pm2 logs ${pm2Id} --lines ${lines} --nostream`,
+      { maxBuffer: 1024 * 1024 },
+      (err, stdout, stderr) => {
+        if (err) {
+          console.error(
+            `[PM2] pm2 logs command failed for process ${pm2Id}:`,
+            stderr || err
+          );
+          return reject(stderr || err);
+        }
+        resolve(stdout);
       }
     );
-
-    child.stdout.on("data", (data) => {
-      chunks.push(data.toString());
-    });
-
-    child.stderr.on("data", (data) => {
-      console.error(`[PM2 Logs Error]: ${data}`);
-    });
-
-    child.on("error", (err) => {
-      reject(err);
-    });
-
-    child.on("close", () => {
-      resolve(chunks.join(""));
-    });
   });
 }
